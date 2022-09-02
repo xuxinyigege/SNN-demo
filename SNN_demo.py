@@ -69,27 +69,22 @@ class neuron:
 import numpy as np
 import cv2
 
-def rf(inp):
+def rf(inp: np.array):
     sca1 =  0.625
     sca2 =  0.125
     sca3 = -0.125
     sca4 = -.5
 
     # receptive field kernel
-    w = [[sca4 ,sca3 , sca2 ,sca3 ,sca4],
-         [sca3 ,sca2 , sca1 ,sca2 ,sca3],
-         [sca2 ,sca1 ,    1 ,sca1 ,sca2],
-         [sca3 ,sca2 , sca1 ,sca2 ,sca3],
-         [sca4 ,sca3 , sca2 ,sca3 ,sca4]]
-
-    pot = np.zeros([par.pixel_x,par.pixel_x])
-    ran = [-2,-1,0,1,2]
-    ox = 2
-    oy = 2
-
-    # convolution
-
+    w = np.array([[sca4 ,sca3 , sca2 ,sca3 ,sca4],
+                  [sca3 ,sca2 , sca1 ,sca2 ,sca3],
+                  [sca2 ,sca1 ,    1 ,sca1 ,sca2],
+                  [sca3 ,sca2 , sca1 ,sca2 ,sca3],
+                  [sca4 ,sca3 , sca2 ,sca3 ,sca4]])
+    
     half_range = 2
+    pot = np.zeros([par.pixel_x,par.pixel_x])
+    # convolution
     for i in range(half_range, par.pixel_x - half_range -1):
         for j in range(half_range, par.pixel_x - half_range -1):
             pot[i, j] = (inp[i - half_range : i + half_range +1, j - half_range : j + half_range +1] * w / 255).sum()
@@ -123,17 +118,8 @@ def update(w, del_w):
 from numpy import interp
 
 def reconst_weights(weights, num):
-    weights = np.array(weights)
-    weights = np.reshape(weights, (par.pixel_x,par.pixel_x))
-    img = np.zeros((par.pixel_x,par.pixel_x))
-    '''
-    for i in range(par.pixel_x):
-        for j in range(par.pixel_x):
-            img[i][j] = int(interp(weights[i][j], [par.w_min,par.w_max], [0,255]))
-    '''
     img = interp(np.array(weights).reshape((par.pixel_x,par.pixel_x)), [par.w_min,par.w_max], [0,255])
-
-    cv2.imwrite('reconstructed neurons/neuron' + str(num) + '.png' ,img)
+    cv2.imwrite('neuron' + str(num) + '.png' ,img)
     return img
 
 
@@ -168,19 +154,15 @@ def encode(pot):
 
 # 【var_th.py】Adaptive threshold
 
-import os
-from PIL import Image
-
 def threshold(train):
-    tu = np.shape(train[0])[0] # tu = 201
-    thresh = 0
+    tu = len(train[0]) # tu = 201
+    thresh_counts = 0
     for i in range(tu):
         simul_active = sum(train[:,i])
-        if simul_active>thresh:
-            thresh = simul_active
-
-    return (thresh/3)*par.scale
-
+        if simul_active>thresh_counts:
+            thresh_counts = simul_active
+    thresh = (thresh_counts/3) * par.scale
+    return thresh
 
 # In[13]:
 
